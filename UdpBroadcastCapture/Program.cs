@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace UdpBroadcastCapture
@@ -17,22 +19,57 @@ namespace UdpBroadcastCapture
         // https://msdn.microsoft.com/en-us/library/system.net.ipaddress.ipv6any.aspx
         static void Main()
         {
-            IPEndPoint remoteEndPoint = new IPEndPoint(IpAddress, 9998);
 
-            using (UdpClient socket = new UdpClient(Port))
+
+            #region post til database
+
+            string GetBroadcast()
             {
-                while (true)
+                IPEndPoint remoteEndPoint = new IPEndPoint(IpAddress, 9998);
+
+                using (UdpClient socket = new UdpClient(Port))
                 {
-                    Console.WriteLine("Waiting for broadcast {0}", socket.Client.LocalEndPoint);
                     byte[] datagramReceived = socket.Receive(ref remoteEndPoint);
 
                     string message = Encoding.ASCII.GetString(datagramReceived, 0, datagramReceived.Length);
-                    Console.WriteLine("Receives {0} bytes from {1} port {2} message {3}", datagramReceived.Length,
-                        remoteEndPoint.Address, remoteEndPoint.Port, message);
-                    //Parse(message);
+
+                    return message;
+
                 }
             }
-        }  
+
+            using (var service = new TempWebService.Service1Client())
+            {
+                Console.WriteLine("jeg poster");
+                service.PostTempToList(GetBroadcast());
+                Console.WriteLine("færdig med post");
+            }
+
+            #endregion
+
+
+
+
+
+
+
+
+
+            using (var service = new TempWebService.Service1Client())
+            {
+
+                foreach (var i in service.GetAllTemps())
+                {
+                    Console.WriteLine(i.Temp);
+                }
+
+            }
+
+
+            Console.ReadLine();
+     
+
+        }
 
         // To parse data from the IoT devices in the teachers room, Elisagårdsvej
         private static void Parse(string response)
@@ -46,5 +83,9 @@ namespace UdpBroadcastCapture
             string temperatureStr = temperatureLine.Substring(temperatureLine.IndexOf(": ") + 2);
             Console.WriteLine(temperatureStr);
         }
+
+
     }
+
 }
+
